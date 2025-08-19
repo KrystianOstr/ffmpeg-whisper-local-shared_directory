@@ -1,0 +1,39 @@
+name: Probe video
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_path:
+        description: "Pełna ścieżka do pliku w VM (np. /media/sf_SHARED_FOLDER/Video/film.mp4)"
+        required: true
+        type: string
+
+jobs:
+  probe:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: Who? Where?
+        run: |
+          whoami
+          hostname
+          uname -a
+
+      - name: Check files and permissions
+        run: |
+          set -e
+          echo "VIDEO_PATH=${{ inputs.video_path }}"
+          ls -la "${{ inputs.video_path }}"
+          stat -c 'mode:%a owner:%U group:%G size:%s' "${{ inputs.video_path }}"
+
+      - name: ffprobe (metadata)
+        run: |
+          set -e
+          ffprobe -v error -show_format -show_streams -of json "${{ inputs.video_path }}" | tee probe.json
+          echo "---- Skrót ----"
+          jq -r '.format | {filename, duration, size, bit_rate}' probe.json || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-json
+          path: probe.json

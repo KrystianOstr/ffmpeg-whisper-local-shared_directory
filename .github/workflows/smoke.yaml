@@ -19,7 +19,7 @@ jobs:
           ip -4 addr show
           curl -I https://github.com -sS | head -n 5
           
-      - name: Gdzie jest share VirtualBox (vboxsf)?
+      - name: Where is share VBOX?
         run: |
           set -e
           echo "== mount | grep vboxsf =="
