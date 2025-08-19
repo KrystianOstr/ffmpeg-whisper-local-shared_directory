@@ -1,0 +1,32 @@
+name: Smoke on self-hosted
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-runner:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: Who, where?
+        run: |
+          whoami
+          hostname
+          uname -a
+
+      - name: Is network working?
+        run: |
+          set -e
+          ip -4 addr show
+          curl -I https://github.com -sS | head -n 5
+          
+      - name: Gdzie jest share VirtualBox (vboxsf)?
+        run: |
+          set -e
+          echo "== mount | grep vboxsf =="
+          mount | grep vboxsf || true
+          echo "== Kandydaci pod /media =="
+          ls -la /media || true
+          echo "== Próbuję ls /media/sf_* i /mnt/shared =="
+          for p in /media/sf_* /mnt/shared; do
+            [ -e "$p" ] && echo ">>> $p" && ls -la "$p" || true
+          done
