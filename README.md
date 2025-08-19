@@ -1,0 +1,1 @@
+# ffmpeg-whisper-local-shared_directory
