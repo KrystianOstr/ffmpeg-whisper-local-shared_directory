@@ -1,0 +1,20 @@
+name: Whisper one file
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  transcribe:
+    runs-on: self-hosted
+    steps:
+    - name: Extract audio from first input file
+      run: |
+        FILE=$(ls /media/sf_SHARED_FOLDER/input/*.mp4 | head -n 1)
+        BASENAME=$(basename "$FILE" .mp4)
+        ffmpeg -y -i "$FILE" -ac 1 -ar 16000 "/media/sf_SHARED_FOLDER/audio/${BASENAME}.wav"
+
+    - name: Run whisper on audio file
+      run: |
+        FILE=$(ls /media/sf_SHARED_FOLDER/input/*.mp4 | head -n 1)
+        BASENAME=$(basename "$FILE" .mp4)
+        whisper "$FILE" --model medium --language pl --output_dir /media/sf_SHARED_FOLDER/out --output_format txt
