@@ -2,19 +2,32 @@ name: Whisper one file
 
 on:
   workflow_dispatch:
-    
+
+env:
+  SHARED: /media/sf_SHARED_FOLDER
+  WHISPER_BIN: /home/actions/.local/bin/whisper   # tu jest whisper dla usera 'actions'
+
 jobs:
   transcribe:
     runs-on: self-hosted
     steps:
-    - name: Extract audio from first input file
-      run: |
-        FILE=$(ls /media/sf_SHARED_FOLDER/input/*.mp4 | head -n 1)
-        BASENAME=$(basename "$FILE" .mp4)
-        ffmpeg -y -i "$FILE" -ac 1 -ar 16000 "/media/sf_SHARED_FOLDER/audio/${BASENAME}.wav"
+      - name: Extract audio from first input file (dowolne -> WAV 16k mono)
+        run: |
+          set -e
+          shopt -s nullglob
+          FILES=( "$SHARED/input/"* )
+          [ ${#FILES[@]} -gt 0 ] || { echo "Brak plików w $SHARED/input/"; exit 1; }
+          FILE="${FILES[0]}"
+          BASE="${FILE##*/}"; BASE="${BASE%.*}"
+          ffmpeg -y -i "$FILE" -vn -ac 1 -ar 16000 "$SHARED/audio/${BASE}.wav"
+          ls -lh "$SHARED/audio/${BASE}.wav"
 
-    - name: Run whisper on audio file
-      run: |
-        FILE=$(ls /media/sf_SHARED_FOLDER/input/*.mp4 | head -n 1)
-        BASENAME=$(basename "$FILE" .mp4)
-        whisper "$FILE" --model medium --language pl --output_dir /media/sf_SHARED_FOLDER/out --output_format txt
+      - name: Run whisper na wygenerowanym WAV
+        run: |
+          set -e
+          WAVS=( "$SHARED/audio/"*.wav )
+          [ ${#WAVS[@]} -gt 0 ] || { echo "Brak WAV w $SHARED/audio/"; exit 1; }
+          WAV="${WAVS[0]}"
+          BASE="${WAV##*/}"; BASE="${BASE%.*}"
+          "$WHISPER_BIN" "$WAV" --model medium --language pl --output_dir "$SHARED/out" --output_format txt
+          ls -lh "$SHARED/out/${BASE}.txt"
